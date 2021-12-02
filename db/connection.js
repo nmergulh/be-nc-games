@@ -9,13 +9,13 @@ const config =
         },
       }
     : {};
+
 require("dotenv").config({
   path: `${__dirname}/../.env.${ENV}`,
 });
 
 if (!process.env.PGDATABASE && !process.env.DATABASE_URL) {
-  throw new Error("PGDATABASE not set or DATABASE_URL not set");
+  throw new Error("PGDATABASE or DATABASE_URL not set");
 }
 
-console.log(config);
 module.exports = new Pool(config);
