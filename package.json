@@ -6,7 +6,8 @@
   "scripts": {
     "setup-dbs": "psql -f ./db/setup.sql",
     "seed": "node ./db/seeds/run-seed.js",
-    "test": "jest"
+    "test": "jest",
+    "seed:prod": "NODE_ENV=production DATABASE_URL=$(heroku config:get DATABASE_URL) npm run seed"
   },
   "repository": {
     "type": "git",
@@ -24,6 +25,7 @@
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "format": "^0.2.2",
+    "jest-sorted": "^1.0.12",
     "pg": "^8.7.1",
     "pg-format": "^1.0.4",
     "supertest": "^6.1.6"

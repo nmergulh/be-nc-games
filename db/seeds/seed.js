@@ -92,12 +92,14 @@ const seed = (data) => {
             data.votes,
             data.category,
             data.owner,
+            data.review_img_url,
+            data.created_at,
           ];
         });
 
         const queryStr = format(
           `INSERT INTO reviews
-          (title, review_body, designer, votes, category, owner)
+          (title, review_body, designer, votes, category, owner, review_img_url, created_at)
           VALUES
           %L;
           `,
@@ -107,12 +109,12 @@ const seed = (data) => {
       })
       .then(() => {
         const formattedCommentsData = commentData.map((data) => {
-          return [data.author, data.review_ID, data.votes, data.body];
+          return [data.author, data.review_id, data.votes, data.body];
         });
 
         const queryStr = format(
           `INSERT INTO comments
-          (author, review_ID, votes, body)
+          (author, review_id, votes, body)
           VALUES
           %L;
           `,

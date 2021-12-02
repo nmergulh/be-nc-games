@@ -35,7 +35,7 @@ describe("GET /api/categories", () => {
 });
 
 describe("GET /api/reviews/:review_id", () => {
-  test("200: returns review associated to review_id", () => {
+  test("200: returns review (incl comment count) associated to a review_id ", () => {
     return request(app)
       .get("/api/reviews/2")
       .then((response) => {
@@ -48,6 +48,7 @@ describe("GET /api/reviews/:review_id", () => {
           review.designer = expect.any(String);
           review.review_img_url = expect.any(String);
           review.votes = expect.any(Number);
+          review.comment_count = expect("3");
         });
       });
   });
@@ -59,7 +60,7 @@ describe("GET /api/reviews/:review_id", () => {
         expect(response.body.msg).toBe("review not found");
       });
   });
-  test('400: returns "Invalid input"', () => {
+  test('400: returns "invalid input"', () => {
     return request(app)
       .get(`/api/reviews/${"Bob"}`)
       .expect(400)
@@ -80,6 +81,62 @@ describe("PATCH /api/reviews/:review_id", () => {
       .then((response) => {
         expect(response.body.review).toBeInstanceOf(Array);
         expect(response.body.review).toHaveLength(1);
+        response.body.review.forEach((review) => {
+          review.review_id = expect.any(Number);
+          review.title = expect.any(String);
+          review.review_body = expect.any(String);
+          review.designer = expect.any(String);
+          review.review_img_url = expect.any(String);
+          review.votes = expect(6);
+        });
+      });
+  });
+  test('404: returns "path not found"', () => {
+    const incObj = { inc_votes: 1 };
+    return request(app)
+      .patch(`/api/review/2`)
+      .send(incObj)
+      .expect(404)
+      .then((response) => {
+        expect(response.body.msg).toBe("path not found");
+      });
+  });
+  test('400: returns "invalid input"', () => {
+    const inc0bj = { inc_votes: "banana" };
+    return request(app)
+      .patch(`/api/reviews/2`)
+      .send(inc0bj)
+      .expect(400)
+      .then((response) => {
+        expect(response.body.msg).toBe("invalid input");
+      });
+  });
+});
+
+describe("GET /api/reviews", () => {
+  test("200: returns reviews table (incl comment count for each review)", () => {
+    return request(app)
+      .get("/api/reviews")
+      .then((response) => {
+        expect(response.body.reviews).toBeInstanceOf(Array);
+        expect(response.body.reviews).toHaveLength(13);
+        response.body.reviews.forEach((review) => {
+          review.review_id = expect.any(Number);
+          review.title = expect.any(String);
+          review.review_body = expect.any(String);
+          review.designer = expect.any(String);
+          review.review_img_url = expect.any(String);
+          review.votes = expect.any(Number);
+          review.comment_count = expect.any(Number);
+        });
+      });
+  });
+  test('404: returns "path not found"', () => {
+    return request(app)
+      .get(`/api/review`)
+      .expect(404)
+      .then((response) => {
+        expect(response.body.msg).toBe("path not found");
       });
   });
 });
