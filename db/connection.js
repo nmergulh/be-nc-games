@@ -10,6 +10,8 @@ const config =
       }
     : {};
 
+console.log(ENV);
+
 require("dotenv").config({
   path: `${__dirname}/../.env.${ENV}`,
 });
