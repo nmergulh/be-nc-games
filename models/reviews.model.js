@@ -1,4 +1,3 @@
-const { query } = require("../db/connection");
 const db = require("../db/connection");
 
 exports.selectReviewById = (review_id) => {
@@ -95,11 +94,11 @@ exports.selectCommentsByReviewId = (review_id) => {
     });
 };
 
-exports.insertCommentById = (body, username) => {
+exports.insertCommentByReviewId = (review_id, author, body) => {
   return db
     .query(
-      `INSERT INTO comments(body, username)
-  VALUES (${body}, ${username}) RETURNING*`
+      `INSERT INTO comments(review_id, author, body) VALUES %L RETURNING*;`,
+      [[review_id, author, body]]
     )
     .then(({ rows }) => {
       if (rows.length === 0)

@@ -226,17 +226,20 @@ describe("GET /api/reviews/:review_id/comments", () => {
   });
 });
 
-describe("201: displays comment added to specific review_id", () => {
-  return request(app)
-    .post("/api/reviews/2/comments")
-    .send({
-      username: "bainesface",
-      body: "I didn't know dogs could play games",
-    })
-    .expect(201)
-    .then((response) => {
-      expect(response.body.comment).toBeInstanceOf(Array);
-    });
+describe("POST /api/reviews/:review_id/comments", () => {
+  test("201: displays comment added to specific review_id", () => {
+    return request(app)
+      .post("/api/reviews/2/comments")
+      .send({
+        author: "bainesface",
+        body: "I did know dogs could play games",
+      })
+      .expect(201)
+      .then((response) => {
+        console.log(response);
+        expect(response.body).toBeInstanceOf(Array);
+      });
+  });
 });
 
 describe("GET /api", () => {
