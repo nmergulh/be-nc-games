@@ -99,7 +99,7 @@ exports.selectReviews = (sort_by = "created_at", order = "desc", category) => {
 
     .then(({ rows }) => {
       if (rows.length === 0)
-        return Promise.reject({ status: 400, msg: "review not found" });
+        return Promise.reject({ status: 404, msg: "review not found" });
       return rows;
     });
 };
@@ -111,21 +111,45 @@ exports.selectCommentsByReviewId = (review_id) => {
     )
     .then(({ rows }) => {
       if (rows.length === 0)
-        return Promise.reject({ status: 400, msg: "review not found" });
+        return Promise.reject({ status: 404, msg: "review not found" });
       return rows;
     });
 };
 
 exports.insertCommentByReviewId = (review_id, author, body) => {
-  const queryStr = format(
-    `INSERT INTO comments(body,author, review_id)
-    VALUES 
-    %L 
-    RETURNING*;`,
-    [[body, author, review_id]]
-  );
+  return db
+    .query(`SELECT * FROM reviews WHERE review_id = $1`, [review_id])
+    .then(({ rows }) => {
+      if (rows.length === 0) {
+        return Promise.reject({
+          status: 404,
+          msg: "review not found",
+        });
+      }
+    })
+    .then(() => {
+      if (author === undefined || body === undefined) {
+        return Promise.reject({
+          code: "22P02",
+        });
+      }
 
-  return db.query(queryStr).then(({ rows }) => {
-    return rows[0];
-  });
+      const queryStr = format(
+        `INSERT INTO comments(body,author, review_id)
+        VALUES 
+        %L 
+        RETURNING*;`,
+        [[body, author, review_id]]
+      );
+
+      return db.query(queryStr).then(({ rows }) => {
+        if (rows.length === 0) {
+          return Promise.reject({
+            status: 404,
+            msg: "review not found",
+          });
+        }
+        return rows[0];
+      });
+    });
 };

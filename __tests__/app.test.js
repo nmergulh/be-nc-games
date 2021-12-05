@@ -174,6 +174,7 @@ describe("GET /api/reviews", () => {
         expect(response.body.reviews).toBeSortedBy("title", {
           descending: true,
         });
+        expect(response.body.reviews[0].title).toBe("Ultimate Werewolf");
       });
   });
   test("200: return reviews table (incl comment count for each review) in Asc order", () => {
@@ -183,6 +184,9 @@ describe("GET /api/reviews", () => {
       .then((response) => {
         expect(response.body.reviews).toBeInstanceOf(Array);
         expect(response.body.reviews).toBeSortedBy();
+        expect(response.body.reviews[0].created_at).toBe(
+          "1970-01-10T02:08:38.400Z"
+        );
       });
   });
   test('200: returns reviews table relating to "social deduction" category in ASC order', () => {
@@ -265,12 +269,12 @@ describe("GET /api/reviews/:review_id/comments", () => {
         expect(response.body.msg).toBe("path not found");
       });
   });
-  test('400: returns "review not found"', () => {
+  test('404: returns "review not found"', () => {
     return request(app)
       .get("/api/reviews/100/comments")
-      .expect(400)
+      .expect(404)
       .then((response) => {
-        expect(response.body.msg);
+        expect(response.body.msg).toBe("review not found");
       });
   });
 });
@@ -287,6 +291,48 @@ describe("POST /api/reviews/:review_id/comments", () => {
       .then((response) => {
         expect(response.body.comment).toBeInstanceOf(Object);
       });
+  });
+  test('404: returns with "review not found"', () => {
+    return request(app)
+      .post("/api/reviews/1000/comments")
+      .send({
+        author: "bainesface",
+        body: "I did know dogs could play games",
+      })
+      .expect(404)
+      .then((response) => {
+        expect(response.body.msg).toBe("review not found");
+      });
+  });
+
+  test('400: returns with "invalid input" when review_id is string', () => {
+    return request(app)
+      .post("/api/reviews/bob/comments")
+      .send({
+        author: "bainesface",
+        body: "I did know dogs could play games",
+      })
+      .expect(400)
+      .then((response) => {
+        expect(response.body.msg).toBe("invalid input");
+      });
+  });
+  test('400: returns with "invalid input" when key in body is missing key', () => {
+    return request(app)
+      .post("/api/reviews/2/comments")
+      .send({
+        author: "bainesface",
+      })
+      .expect(400)
+      .then((response) => {
+        expect(response.body.msg).toBe("invalid input");
+      });
+  });
+});
+
+describe("DELETE /api/comments/:comment_id", () => {
+  test("204: deletes comment no response", () => {
+    request(app).delete("/api/comments/1").expect(204);
   });
 });
 
