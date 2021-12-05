@@ -3,7 +3,6 @@ const testData = require("../db/data/test-data/index.js");
 const seed = require("../db/seeds/seed.js");
 const request = require("supertest");
 const app = require("../app");
-const comments = require("../db/data/test-data/comments.js");
 
 beforeEach(() => seed(testData));
 
@@ -15,14 +14,22 @@ describe("GET /api/categories", () => {
       .get("/api/categories")
       .expect(200)
       .then((response) => {
-        expect(response.body.categories).toBeInstanceOf(Array);
-        expect(response.body.categories).toHaveLength(4);
-        response.body.categories.forEach((item) => {
-          expect.objectContaining({
-            slug: expect.any(String),
-            description: expect.any(String),
-          });
-        });
+        expect(response.body.categories).toBeInstanceOf(Object);
+        expect(response.body.categories).toEqual([
+          {
+            slug: "euro game",
+            description: "Abstact games that involve little luck",
+          },
+          {
+            slug: "social deduction",
+            description: "Players attempt to uncover each other's hidden role",
+          },
+          { slug: "dexterity", description: "Games involving physical skill" },
+          {
+            slug: "children's games",
+            description: "Games suitable for children",
+          },
+        ]);
       });
   });
   test('404: returns "path not found"', () => {
@@ -39,18 +46,24 @@ describe("GET /api/reviews/:review_id", () => {
   test("200: returns review (incl comment count) associated to a review_id ", () => {
     return request(app)
       .get("/api/reviews/2")
+      .expect(200)
       .then((response) => {
-        expect(response.body.review).toBeInstanceOf(Array);
-        expect(response.body.review).toHaveLength(1);
-        response.body.review.forEach((review) => {
-          review.review_id = expect(2);
-          review.title = expect.any(String);
-          review.review_body = expect.any(String);
-          review.designer = expect.any(String);
-          review.review_img_url = expect.any(String);
-          review.votes = expect.any(Number);
-          review.comment_count = expect("3");
-        });
+        expect(response.body.review).toBeInstanceOf(Object);
+        expect(response.body.review).toEqual(
+          expect.objectContaining({
+            title: "Jenga",
+            designer: "Leslie Scott",
+            owner: "philippaclaire9",
+            review_img_url:
+              "https://www.golenbock.com/wp-content/uploads/2015/01/placeholder-user.png",
+            review_body: "Fiddly fun for all the family",
+            category: "dexterity",
+            created_at: expect.any(String),
+            votes: 5,
+            review_id: 2,
+            comment_count: "3",
+          })
+        );
       });
   });
   test('404: returns "review not found"', () => {
@@ -72,26 +85,44 @@ describe("GET /api/reviews/:review_id", () => {
 });
 
 describe("PATCH /api/reviews/:review_id", () => {
-  test("201: returns review with updated vote count", () => {
+  test("200: returns review with updated vote count", () => {
     const incObj = { inc_votes: 1 };
 
     return request(app)
       .patch(`/api/reviews/2`)
       .send(incObj)
-      .expect(201)
+      .expect(200)
       .then((response) => {
-        expect(response.body.review).toBeInstanceOf(Array);
-        expect(response.body.review).toHaveLength(1);
-        response.body.review.forEach((review) => {
-          review.review_id = expect.any(Number);
-          review.title = expect.any(String);
-          review.review_body = expect.any(String);
-          review.designer = expect.any(String);
-          review.review_img_url = expect.any(String);
-          review.votes = expect(6);
-        });
+        expect(response.body.review).toBeInstanceOf(Object);
+        expect(response.body.review).toEqual(
+          expect.objectContaining({
+            title: "Jenga",
+            designer: "Leslie Scott",
+            owner: "philippaclaire9",
+            review_img_url:
+              "https://www.golenbock.com/wp-content/uploads/2015/01/placeholder-user.png",
+            review_body: "Fiddly fun for all the family",
+            category: "dexterity",
+            created_at: expect.any(String),
+            votes: 6,
+            review_id: 2,
+          })
+        );
       });
   });
+
+  test("400: no votes on the request body", () => {
+    const incObj = { not_inc_votes: 1 };
+
+    return request(app)
+      .patch(`/api/reviews/2`)
+      .send(incObj)
+      .expect(400)
+      .then((response) => {
+        expect(response.body.msg).toBe("invalid input");
+      });
+  });
+
   test('404: returns "path not found"', () => {
     const incObj = { inc_votes: 1 };
     return request(app)
@@ -112,28 +143,46 @@ describe("PATCH /api/reviews/:review_id", () => {
         expect(response.body.msg).toBe("invalid input");
       });
   });
-});
-
-describe("GET /api/reviews", () => {
-  test("200: returns reviews table sorted by title (incl comment count for each review) in ascending order", () => {
+  test('404: returns "path not found" from non existent ID', () => {
+    const incObj = { inc_votes: 1 };
     return request(app)
-      .get("/api/reviews?sort_by=title&order=asc")
+      .patch(`/api/review/100`)
+      .send(incObj)
+      .expect(404)
+      .then((response) => {
+        expect(response.body.msg).toBe("path not found");
+      });
+  });
+  test('400: returns "invalid input for review_id when string is passed', () => {
+    const incObj = { inc_votes: 1 };
+    return request(app)
+      .patch(`/api/reviews/${"Bob"}`)
+      .send(incObj)
+      .expect(400)
+      .then((response) => {
+        expect(response.body.msg).toBe("invalid input");
+      });
+  });
+});
+describe("GET /api/reviews", () => {
+  test("200: returns reviews table sorted by title (incl comment count for each review)", () => {
+    return request(app)
+      .get("/api/reviews?sort_by=title")
       .expect(200)
       .then((response) => {
         expect(response.body.reviews).toBeInstanceOf(Array);
-        expect(response.body.reviews).toHaveLength(13);
-        expect(response.body.reviews).toBeSortedBy("title");
-        expect(response.body.reviews[0].title).toBe(
-          "A truly Quacking Game; Quacks of Quedlinburg"
-        );
-        expect(response.body.reviews[12].title).toBe("Ultimate Werewolf");
-        response.body.reviews.forEach((review) => {
-          review.review_id = expect.any(Number);
-          review.owner = expect.any(String);
-          review.title = expect.any(String);
-          review.category = expect.any(String);
-          review.img_url = expect.any(String);
+        expect(response.body.reviews).toBeSortedBy("title", {
+          descending: true,
         });
+      });
+  });
+  test("200: return reviews table (incl comment count for each review) in Asc order", () => {
+    return request(app)
+      .get("/api/reviews?order=asc")
+      .expect(200)
+      .then((response) => {
+        expect(response.body.reviews).toBeInstanceOf(Array);
+        expect(response.body.reviews).toBeSortedBy();
       });
   });
   test('200: returns reviews table relating to "social deduction" category in ASC order', () => {
@@ -236,8 +285,7 @@ describe("POST /api/reviews/:review_id/comments", () => {
       })
       .expect(201)
       .then((response) => {
-        console.log(response);
-        expect(response.body).toBeInstanceOf(Array);
+        expect(response.body.comment).toBeInstanceOf(Object);
       });
   });
 });

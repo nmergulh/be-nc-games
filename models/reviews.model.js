@@ -1,4 +1,5 @@
 const db = require("../db/connection");
+const format = require("pg-format");
 
 exports.selectReviewById = (review_id) => {
   return db
@@ -13,25 +14,45 @@ exports.selectReviewById = (review_id) => {
     )
     .then(({ rows }) => {
       if (rows.length === 0)
-        return Promise.reject({ status: 404, msg: "review not found" });
-      return rows;
+        return Promise.reject({
+          status: 404,
+          msg: `review not found`,
+        });
+      return rows[0];
     });
 };
 
 exports.updateReviewById = (voteObj, review_id) => {
+  if (
+    !voteObj.inc_votes ||
+    typeof voteObj.inc_votes === "string" ||
+    Object.keys(voteObj).length > 1
+  ) {
+    return Promise.reject({
+      code: "22P02",
+    });
+  }
+
   return db
     .query(
-      `UPDATE reviews SET votes = votes + $1 WHERE review_id = $2 RETURNING *`,
+      `UPDATE reviews
+  SET votes = votes + $1
+  WHERE review_id = $2
+  RETURNING *;`,
       [voteObj.inc_votes, review_id]
     )
     .then(({ rows }) => {
-      if (rows.length === 0)
-        return Promise.reject({ status: 404, msg: "review not found" });
-      return rows;
+      if (rows.length === 0) {
+        return Promise.reject({
+          status: 404,
+          msg: `review not found`,
+        });
+      }
+      return rows[0];
     });
 };
 
-exports.selectReviews = (sort_by = "date", order = "DESC", category) => {
+exports.selectReviews = (sort_by = "created_at", order = "desc", category) => {
   if (
     ![
       "owner",
@@ -39,15 +60,16 @@ exports.selectReviews = (sort_by = "date", order = "DESC", category) => {
       "review_id",
       "category",
       "review_img_url",
-      "created at",
+      "created_at",
       "votes",
       "comment_count",
+      undefined,
     ].includes(sort_by)
   ) {
     return Promise.reject({ status: 400, msg: "invalid sort query" });
   }
 
-  if (!["asc", "desc"].includes(order)) {
+  if (!["asc", "desc", undefined].includes(order)) {
     return Promise.reject({ status: 400, msg: "invalid order query" });
   }
 
@@ -95,13 +117,15 @@ exports.selectCommentsByReviewId = (review_id) => {
 };
 
 exports.insertCommentByReviewId = (review_id, author, body) => {
-  return db
-    .query(
-      `INSERT INTO comments(review_id, author, body) VALUES %L RETURNING*;`,
-      [[review_id, author, body]]
-    )
-    .then(({ rows }) => {
-      if (rows.length === 0)
-        return Promise.reject({ status: 400, msg: "comment not found" });
-    });
+  const queryStr = format(
+    `INSERT INTO comments(body,author, review_id)
+    VALUES 
+    %L 
+    RETURNING*;`,
+    [[body, author, review_id]]
+  );
+
+  return db.query(queryStr).then(({ rows }) => {
+    return rows[0];
+  });
 };
