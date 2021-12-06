@@ -1,12 +1,11 @@
 const categoriesRouter = require("./api.categories");
 const commentsRouter = require("./api.comments");
 const reviewsRouter = require("./api.reviews");
+const { getEndpoints } = require("../controllers/api.controller");
 
 const apiRouter = require("express").Router();
 
-apiRouter.get("/", (req, res) => {
-  res.status(200).send({ msg: "connected to api" });
-});
+apiRouter.get("/", getEndpoints);
 
 apiRouter.use("/categories", categoriesRouter);
 

@@ -290,6 +290,34 @@ describe("POST /api/reviews/:review_id/comments", () => {
       .expect(201)
       .then((response) => {
         expect(response.body.comment).toBeInstanceOf(Object);
+        expect(response.body.comment).toEqual(
+          expect.objectContaining({
+            author: "bainesface",
+            body: "I did know dogs could play games",
+            comment_id: 7,
+            created_at: expect.any(String),
+            review_id: 2,
+            votes: 0,
+          })
+        );
+      });
+  });
+  test("201: displays comment added to specific review_id ignoring extra fields", () => {
+    return request(app)
+      .post("/api/reviews/2/comments")
+      .send({
+        author: "bainesface",
+        body: "I did know dogs could play games",
+        ignore: "ignore this",
+      })
+      .expect(201)
+      .then((response) => {
+        expect(response.body.comment).toBeInstanceOf(Object);
+        expect(response.body.comment).not.toEqual(
+          expect.objectContaining({
+            ignore: "ignore this",
+          })
+        );
       });
   });
   test('404: returns with "review not found"', () => {
@@ -331,8 +359,24 @@ describe("POST /api/reviews/:review_id/comments", () => {
 });
 
 describe("DELETE /api/comments/:comment_id", () => {
-  test("204: deletes comment no response", () => {
-    request(app).delete("/api/comments/1").expect(204);
+  test("204: deletes comment relating to comment_id 1", () => {
+    return request(app).delete("/api/comments/1").expect(204);
+  });
+  test('404: returns "comment not found" ', () => {
+    return request(app)
+      .delete("/api/comments/1000")
+      .expect(404)
+      .then((response) => {
+        expect(response.body.msg).toBe("comment not found");
+      });
+  });
+  test('400: returns "invalid data type"', () => {
+    return request(app)
+      .delete("/api/comments/bob")
+      .expect(400)
+      .then((response) => {
+        expect(response.body.msg).toBe("invalid input");
+      });
   });
 });
 
@@ -342,7 +386,7 @@ describe("GET /api", () => {
       .get("/api")
       .expect(200)
       .then((response) => {
-        expect(response.body).toEqual({ msg: "connected to api" });
+        expect(response.body.endpoints).toBeInstanceOf(Object);
       });
   });
 });
