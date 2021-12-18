@@ -389,4 +389,153 @@ describe("GET /api", () => {
         expect(response.body.endpoints).toBeInstanceOf(Object);
       });
   });
+  test('404: returns "path not found"', () => {
+    return request(app)
+      .get("/appi")
+      .expect(404)
+      .then((response) => {
+        expect(response.body.msg).toBe("path not found");
+      });
+  });
+});
+
+describe("GET /api/users", () => {
+  test("200: returns the users table that includes users property for each object", () => {
+    return request(app)
+      .get("/api/users")
+      .expect(200)
+      .then((response) => {
+        expect(response.body.users).toBeInstanceOf(Array);
+        expect(response.body.users).toEqual([
+          {
+            username: "mallionaire",
+            name: "haz",
+            avatar_url:
+              "https://www.healthytherapies.com/wp-content/uploads/2016/06/Lime3.jpg",
+          },
+          {
+            username: "philippaclaire9",
+            name: "philippa",
+            avatar_url:
+              "https://avatars2.githubusercontent.com/u/24604688?s=460&v=4",
+          },
+          {
+            username: "bainesface",
+            name: "sarah",
+            avatar_url:
+              "https://avatars2.githubusercontent.com/u/24394918?s=400&v=4",
+          },
+          {
+            username: "dav3rid",
+            name: "dave",
+            avatar_url:
+              "https://www.golenbock.com/wp-content/uploads/2015/01/placeholder-user.png",
+          },
+        ]);
+        response.body.users.forEach((user) => {
+          user.username = expect.any(String);
+          user.avatar_url = expect.any(String);
+          user.name = expect.any(String);
+        });
+      });
+  });
+  test('404: returns "path not found"', () => {
+    return request(app)
+      .get("/api/user")
+      .expect(404)
+      .then((response) => {
+        expect(response.body.msg).toBe("path not found");
+      });
+  });
+});
+describe("GET /api/users/:username", () => {
+  test("200: returns user object associated to specific username", () => {
+    return request(app)
+      .get("/api/users/dav3rid")
+      .expect(200)
+      .then((response) => {
+        expect(response.body.user).toBeInstanceOf(Array);
+        expect(response.body.user).toEqual([
+          {
+            username: "dav3rid",
+            avatar_url:
+              "https://www.golenbock.com/wp-content/uploads/2015/01/placeholder-user.png",
+            name: "dave",
+          },
+        ]);
+      });
+  });
+  test('404: returns "username not found"', () => {
+    return request(app)
+      .get("/api/users/notauser")
+      .expect(404)
+      .then((response) => {
+        expect(response.body.msg).toBe("username not found");
+      });
+  });
+});
+describe("PATCH /api/comments/:comment_id", () => {
+  test("200: increments the comments vote by 1 & responds with the updated comments", () => {
+    return request(app)
+      .patch("/api/comments/1")
+      .send({ inc_votes: 1 })
+      .expect(200)
+      .then((response) => {
+        expect(response.body.comment).toEqual(
+          expect.objectContaining({
+            comment_id: 1,
+            author: "bainesface",
+            review_id: 2,
+            votes: 17,
+            created_at: expect.any(String),
+            body: expect.any(String),
+          })
+        );
+      });
+  });
+  test("200: decrements the comments vote by 1 & responds with the updated comments", () => {
+    return request(app)
+      .patch("/api/comments/1")
+      .send({ inc_votes: -1 })
+      .expect(200)
+      .then((response) => {
+        expect(response.body.comment).toEqual(
+          expect.objectContaining({
+            comment_id: 1,
+            author: "bainesface",
+            review_id: 2,
+            votes: 15,
+            created_at: expect.any(String),
+            body: expect.any(String),
+          })
+        );
+      });
+  });
+  test('404: returns "comment_id not found"', () => {
+    return request(app)
+      .patch("/api/comments/409")
+      .send({ inc_votes: 1 })
+      .expect(404)
+      .then((response) => {
+        expect(response.body.msg).toEqual("comment_id not found");
+      });
+  });
+  test('400: returns "invalid input', () => {
+    return request(app)
+      .patch("/api/comments/banana")
+      .send({ inc_votes: -1 })
+      .expect(400)
+      .then((response) => {
+        expect(response.body.msg).toEqual("invalid input");
+      });
+  });
+  test('400: returns "invalid input" if boolean value is passed as inc_votes value', () => {
+    return request(app)
+      .patch("/api/comments/1")
+      .send({ inc_votes: true })
+      .expect(400)
+      .then((response) => {
+        expect(response.body.msg).toEqual("invalid input");
+      });
+  });
 });
