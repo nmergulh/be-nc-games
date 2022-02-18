@@ -14,10 +14,10 @@ Northcoders' House of Games API is a reddit-style board of game reviews with use
 
 - Click on the fork button located on the top right of the screen and then click your username. This will create a version associated to your own Github account.
 
-- Before cloning check the subtitle on the top left is <em>`your_Github_account_name`</em>`/nc-games`. Once checked, cd in your terminal to the directory where you would like the local clone copy of the repo to be located and type the following command. Replace <em>your_Github_account_name</em> with your actual username.
+- Before cloning check the subtitle on the top left is <em>`your_Github_account_name`</em>`/be-nc-games`. Once checked, cd in your terminal to the directory where you would like the local clone copy of the repo to be located and type the following command. Replace <em>your_Github_account_name</em> with your actual username.
 
 ```
-git clone your_Github_account_name/nc-games.git
+git clone your_Github_account_name/be-nc-games.git
 ```
 
 ### 2. Dependency Installation
